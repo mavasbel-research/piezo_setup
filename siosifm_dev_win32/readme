@@ -1,0 +1,64 @@
+The development pack for the SIOS-RE-10 interferometer consists of the following
+parts:
+
+include:
+
+directory with the include files.
+
+lib:
+
+directory with the dynamic link library
+
+
+stdcall:
+
+The "stdcall" directory contains the siosifm.dll compiled _stdcall as calling convention.
+
+It allows to use the siosifm.dll in VisualBasic6.
+
+
+mathlab:
+
+Example how to use the DLL in MathLab
+
+
+examples/example1
+
+A simple example application in text mode. It shows the very basic operations:
+opening and closing of the interface, opening and closing of devices,
+how to get measurement values.
+
+
+examples/example2
+
+A more complex GUI application. The application was written in Qt. But even
+without knowledge of Qt the handling of the SIOSIFM-API should be clear visible.
+
+
+examples/example3
+
+Like example1 this is a small text mode application. It shows the usage of the angle
+calculation for two and three beam interferometers.
+
+
+examples/example4
+
+Like example1 it is a simple console application. It demonstrates the usage of PSD (lateral
+shift sensor) values with interferometer containing the optional PSD-04 card(s).
+
+
+examples/common
+
+contains the include files, the three examples are compiled with. The same as
+in "include".
+
+
+siosifm.pdf
+
+contains the documentation of the API
+
+
+
+
+
+

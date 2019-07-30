@@ -1,0 +1,41 @@
+siosifm.dll is made with the free MinGW-GNU compiler. 
+
+Unfortunately Microsoft removes the tool to import DLLs from other
+compilers with VisualStudio 32-bit. We provide an import lib without
+any support as it is. The recent import lib is based on DL version 1.4.0
+Newer functions may not be contained.
+
+
+
+The Knowlagdebase article 
+
+ http://support.microsoft.com/kb/131313/en-us
+
+describes how to make import libs by yourself.
+
+In summary the following steps are necessary:
+
+
+ * Launch : DUMPBIN /EXPORTS siosifm.DLL siosifm.txt
+
+ * Create a siosifm.def file (text editor) and copy the function names
+from the "name"-column of the siosifm.txt (created in the last step) into
+the exports-section 
+
+A sample of the siosifm.def file may look like:
+
+
+LIBRARY   SIOSIFM
+EXPORTS
+   IfmInit   @1
+   IfmOpenUSB   @2
+   IfmCloseDevice   @3
+   IfmClose   @4
+
+
+The ordinal numbers (@...) are optional.
+
+* Launch: LIB /DEF:siosifm.def
+
+creates the required siosifm.lib
+

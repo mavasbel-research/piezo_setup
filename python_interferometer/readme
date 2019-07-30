@@ -1,0 +1,12 @@
+This directory contains the Python bindings for the siosifm.dll
+
+siosifm.py imports the functions and constants of the siosifm.dll 
+and provide them as Python functions. For a function reference, 
+please refer the manual of the siosifm.dll
+
+example.py is a very simple example how to use the siosifm.dll in
+Python.
+
+To run a script using siosifm.py the siosifm.dll must reside in the
+current directory.
+
