@@ -26,7 +26,7 @@ def worker_test(start_event, queue):
     logger.debug("ending test loop...")
 
 if __name__ ==  '__main__':
-    interferometer_controller = InterferometerController(5)
+    interferometer_controller = InterferometerController(5, 100)
     queue, start_event = interferometer_controller.init_comm()
     process_test = multiprocessing.Process(target=worker_test, args=(start_event, queue))
     process_test.start()

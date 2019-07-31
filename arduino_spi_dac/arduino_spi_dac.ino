@@ -16,15 +16,16 @@
 #include <SPI.h>
 
 const int loadPin = 10;
+const byte zero_buffer[] = {0x80, 0x00, 0x2f}; //{MSB, LSB, CRC8}
 
-byte serial_buffer[] = {0x80, 0x00, 0x2f}; //{MSB, LSB, CRC8}
+byte serial_buffer[3]; //{MSB, LSB, CRC8}
 
 void setup() {
   SPI.begin();
   Serial.begin(115200);
   pinMode(loadPin, OUTPUT);
   digitalWrite(loadPin, HIGH);
-  digitalWriteDAC16(serial_buffer);
+  digitalWriteDAC16(zero_buffer);
 }
 
 void loop() {
@@ -38,7 +39,7 @@ void loop() {
   }
 }
 
-void digitalWriteDAC16(byte* bytes_buffer){
+void digitalWriteDAC16(const byte* bytes_buffer){
   unsigned int dac_word = (bytes_buffer[0]<<8) + bytes_buffer[1];
   SPI.beginTransaction(SPISettings(1500000, MSBFIRST, SPI_MODE0));
   SPI.transfer16(dac_word);
