@@ -16,9 +16,10 @@
 #include <SPI.h>
 
 const int loadPin = 10;
-const byte zero_buffer[] = {0x80, 0x00, 0x2f}; //{MSB, LSB, CRC8}
+const byte zero_buffer[] = {0x80, 0x00}; //{MSB, LSB, CRC8}
 
-byte serial_buffer[3]; //{MSB, LSB, CRC8}
+byte serial_buffer[] = {0x80, 0x00, 0x2f}; //{MSB, LSB, CRC8}
+byte dac_buffer[] = {0x80, 0x00}; //{MSB, LSB}
 
 void setup() {
   SPI.begin();
@@ -33,10 +34,11 @@ void loop() {
     Serial.readBytes(serial_buffer, 3);
     byte crc = CRC8(serial_buffer, 2);
     if(crc == serial_buffer[2]){
-      digitalWriteDAC16(serial_buffer);
-      //digitalWriteSerial(serial_buffer, 3);
+      dac_buffer[0] = serial_buffer[0];
+      dac_buffer[1] = serial_buffer[1];
     }
   }
+  digitalWriteDAC16(dac_buffer);
 }
 
 void digitalWriteDAC16(const byte* bytes_buffer){

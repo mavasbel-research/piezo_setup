@@ -9,8 +9,8 @@ from interferometer_utils import InterferometerQuality
 #####################################################
 
 # Interferometer parameters
-SERIAL_PORT = 5
-FREQ = 100
+SERIAL_PORT = 7
+FREQ = 200
 
 #####################################################
 

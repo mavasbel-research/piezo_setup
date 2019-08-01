@@ -43,7 +43,7 @@ class InterferometerSerial:
         if bool(error):
             raise Exception("interferometer error during setting trigger mode.")
         #error = ifmdll.IfmSetMeasurement(devNo, IFM_MEAS_FILTER_DEFAULT | IFM_MEAS_LENGTH , c_double(10))
-        error = ifmdll.IfmSetMeasurement(self._dev_no, IFM_MEAS_FOURCHANNEL|IFM_MEAS_LENGTH|IFM_MEAS_FILTER_DEFAULT, c_double(freq))
+        error = ifmdll.IfmSetMeasurement(self._dev_no, IFM_MEAS_FILTER_DEFAULT | IFM_MEAS_LENGTH, c_double(freq))
         if bool(error):
             raise Exception("interferometer error during setting measurement mode.")
         time.sleep(self._sleep)
@@ -114,18 +114,19 @@ def interf_worker(com_port, freq, measure_event, exit_event, queue):
             intfm_ctrl.open_com()
             intfm_ctrl.set_config(freq)
             try:
-                intfm_ctrl.set_to_zero()
                 logger.info("interferometer starting loop...")
                 while(not exit_event.is_set()):
                     if(measure_event.is_set()):
+                        intfm_ctrl.set_to_zero()
+                        intfm_ctrl.clear_buffer()
                         intfm_ctrl.start_output()
                         while( measure_event.is_set() and not exit_event.is_set() ):
                             ########### Test code
-                            data = random.randint(-1200, 1200)
-                            data = InterferometerData(data, data, data, data, data)
-                            logger.debug("interferometer simulated value: %i" % data.channel_1)
-                            queue.put(data)
-                            time.sleep(0.001)
+                            # data = random.randint(-1200, 1200)
+                            # data = InterferometerData(data, data, data, data, data)
+                            # logger.debug("interferometer simulated value: %i" % data.channel_1)
+                            # queue.put(data)
+                            # time.sleep(1/freq)
                             ###########
                             if(intfm_ctrl.is_data_avilable()):
                                 data = intfm_ctrl.read_output()
@@ -134,15 +135,15 @@ def interf_worker(com_port, freq, measure_event, exit_event, queue):
                         intfm_ctrl.clear_buffer()
                     else:
                         ########### Test code
-                        quality = random.randint(0, 100)
-                        quality = InterferometerQuality(quality, quality, quality)
-                        logger.debug("interferometer simulated quality: %i" % quality.channel_1)
-                        queue.put(quality)
-                        time.sleep(0.5)
+                        # quality = random.randint(0, 100)
+                        # quality = InterferometerQuality(quality, quality, quality)
+                        # logger.debug("interferometer simulated quality: %i" % quality.channel_1)
+                        # queue.put(quality)
+                        # time.sleep(0.5)
                         ###########
                         if(intfm_ctrl.is_quality_available()):
                             quality = intfm_ctrl.read_quality()
-                            queue.put(quality())
+                            queue.put(quality)
                 logger.info("interferometer ending loop...")
             finally:
                 intfm_ctrl.stop_output()

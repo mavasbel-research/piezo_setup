@@ -13,13 +13,13 @@ from amplifier_utils import AmplifierSerial, tx_worker
 
 # serial parameters
 BAUDRATE = 115200
-SERIAL_PORT = 'COM5'
+SERIAL_PORT = 'COM4'
 RX_TIMEOUT = 2
 TX_TIMEOUT = 2
 
 # amplifier parameters
-V_MAX = 1200
-V_MIN = -1200
+V_MAX = 1114
+V_MIN = -1114
 
 #####################################################
 
