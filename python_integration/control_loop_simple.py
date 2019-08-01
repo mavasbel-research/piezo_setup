@@ -16,7 +16,7 @@ logger = logging.getLogger()
 def worker_csv(csv_queue):
     logger.info("csv opening...")
     timestr = time.strftime("%Y-%m-%d-%H-%M-%S")
-    csv_file = open('simple-control-' + timestr + '.csv', mode='a+', newline='')
+    csv_file = open('control-loop-' + timestr + '.csv', mode='a+', newline='')
     csv_writer = csv.writer(csv_file, delimiter=',')
 
     while(True):
@@ -62,12 +62,12 @@ if __name__ ==  '__main__':
     csv_queue = multiprocessing.Queue()
     
     # Create and start process for control computations
-    control_process = multiprocessing.Process(
+    control_loop_process = multiprocessing.Process(
         target=worker_control, 
         args=(interf_controller.get_queue(), 
-        amp_controller.get_queue(),
-        csv_queue))
-    control_process.start()
+            amp_controller.get_queue(),
+            csv_queue))
+    control_loop_process.start()
 
     # Create and start process for csv writing
     csv_process = multiprocessing.Process(
@@ -77,10 +77,10 @@ if __name__ ==  '__main__':
     # Wait for key pressed to start reading of interferometer
     while(not msvcrt.kbhit()): pass
     msvcrt.getwch()
-    interf_controller.get_start_event().set()
+    interf_controller.measure_event().set()
 
     # Wait again for key pressed to stop amplifier and interferometer
     while(not msvcrt.kbhit()): pass
     msvcrt.getwch()
-    interf_controller.stop_comm()
-    amp_controller.stop_comm()
+    interf_controller.end_comm()
+    amp_controller.end_comm()

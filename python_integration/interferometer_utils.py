@@ -8,13 +8,17 @@ from siosifm import *           #Import modules
 from ctypes import *            #(Own writing module is siosifm.py)
 from collections import namedtuple
 
+
 logger = logging.getLogger()
+
+
 InterferometerData = namedtuple('InterferometerData', ['channel_1', 'channel_2', 'channel_3', 'temperature', 'pressure'])
 InterferometerQuality = namedtuple('InterferometerQuality', ['channel_1', 'channel_2', 'channel_3'])
 
+
 class InterferometerSerial:
     def __init__(self, com_port):
-        self._sleep = 3
+        self._sleep = 2
         self._dev_no = 0
         self.com_port = com_port
 
@@ -53,11 +57,16 @@ class InterferometerSerial:
             ifmdll.IfmSignalQuality(self._dev_no, 1, IFM_SIGNALQ_SUM),
             ifmdll.IfmSignalQuality(self._dev_no, 2, IFM_SIGNALQ_SUM))
 
-    def start_output(self):
-        logger.info("interferometer starting output...")
+    def set_to_zero(self):
         error = 0
         # set the length values to zero; assuming the measurement mirror is at the reference/zero position
         error = ifmdll.IfmSetToZero(self._dev_no, 0x0F) 
+        if bool(error):
+            raise Exception("interferometer error during set to zero.")
+        
+    def start_output(self):
+        logger.info("interferometer starting output...")
+        error = 0
         # start with data output
         error = ifmdll.IfmStart(self._dev_no) # begin with the output of data
         if bool(error):
@@ -77,6 +86,12 @@ class InterferometerSerial:
             ifmdll.IfmLengthValue(self._dev_no, 2), 
             ifmdll.IfmTemperature(self._dev_no, 0), 
             ifmdll.IfmAirPressure(self._dev_no, 0))
+        
+    def clear_buffer(self):
+        error = 0
+        error = ifmdll.IfmClearBuffers(self._dev_no) 
+        if bool(error):
+            raise Exception("interferometer error during clear buffer.")
 
     def stop_output(self):
         logger.info("interferometer stopping output...")
@@ -91,7 +106,7 @@ class InterferometerSerial:
         ifmdll.IfmClose() # close the DLL
 
 
-def interf_worker(com_port, freq, start_event, stop_event, queue):
+def interf_worker(com_port, freq, measure_event, exit_event, queue):
     intfm_ctrl = InterferometerSerial(com_port)
     try:
         intfm_ctrl.init_dll()
@@ -99,32 +114,36 @@ def interf_worker(com_port, freq, start_event, stop_event, queue):
             intfm_ctrl.open_com()
             intfm_ctrl.set_config(freq)
             try:
-                while(not start_event.is_set() and not stop_event.is_set()):
-                    ########### Test code
-                    quality = random.randint(0, 100)
-                    quality = InterferometerQuality(quality, quality, quality)
-                    logger.debug("interferometer simulated quality: %i" % quality.channel_1)
-                    queue.put(quality)
-                    time.sleep(0.5)
-                    ###########
-                    if(intfm_ctrl.is_quality_available()):
-                        quality = intfm_ctrl.read_quality()
-                        queue.put(quality)
-                if(start_event.is_set()):
-                    intfm_ctrl.start_output()
-                    logger.info("interferometer starting reading loop...")
-                    while(not stop_event.is_set()):
-                        ########### Test code
-                        data = random.randint(-1200, 1200)
-                        data = InterferometerData(data, data, data, data, data)
-                        logger.debug("interferometer simulated value: %i" % data.channel_1)
-                        queue.put(data)
-                        time.sleep(0.001)
-                        ###########
-                        if(intfm_ctrl.is_data_avilable()):
-                            data = intfm_ctrl.read_output()
+                intfm_ctrl.set_to_zero()
+                logger.info("interferometer starting loop...")
+                while(not exit_event.is_set()):
+                    if(measure_event.is_set()):
+                        intfm_ctrl.start_output()
+                        while( measure_event.is_set() and not exit_event.is_set() ):
+                            ########### Test code
+                            data = random.randint(-1200, 1200)
+                            data = InterferometerData(data, data, data, data, data)
+                            logger.debug("interferometer simulated value: %i" % data.channel_1)
                             queue.put(data)
-                    logger.info("interferometer ending reading loop...")
+                            time.sleep(0.001)
+                            ###########
+                            if(intfm_ctrl.is_data_avilable()):
+                                data = intfm_ctrl.read_output()
+                                queue.put(data)
+                        intfm_ctrl.stop_output()
+                        intfm_ctrl.clear_buffer()
+                    else:
+                        ########### Test code
+                        quality = random.randint(0, 100)
+                        quality = InterferometerQuality(quality, quality, quality)
+                        logger.debug("interferometer simulated quality: %i" % quality.channel_1)
+                        queue.put(quality)
+                        time.sleep(0.5)
+                        ###########
+                        if(intfm_ctrl.is_quality_available()):
+                            quality = intfm_ctrl.read_quality()
+                            queue.put(quality())
+                logger.info("interferometer ending loop...")
             finally:
                 intfm_ctrl.stop_output()
         finally:
@@ -174,13 +193,13 @@ class InterferometerController():
         finally:
             self._lock_release()
 
-    def get_start_event(self):
+    def measure_event(self):
         try:
             self._lock_acquire()
             if( not self.is_init() ):
                 raise Exception('interferometer communication is not running')
             else:
-                return self._start_event
+                return self._measure_event
         finally:
             self._lock_release()
 
@@ -191,27 +210,27 @@ class InterferometerController():
                 raise Exception('interferometer communication already started')
             else:
                 self._queue = multiprocessing.Queue()
-                self._stop_event = multiprocessing.Event()
-                self._start_event = multiprocessing.Event()
+                self._exit_event = multiprocessing.Event()
+                self._measure_event = multiprocessing.Event()
 
                 self._process = multiprocessing.Process(
                     target=interf_worker, 
                     args=(self.com_port, self.freq, 
-                        self._start_event, self._stop_event, self._queue))
+                        self._measure_event, self._exit_event, self._queue))
                 self._process.start()
                 self._init_set()
                 time.sleep(1)
-                return self._queue, self._start_event
+                return self._queue, self._measure_event
         finally:
             self._lock_release()
 
-    def stop_comm(self):
+    def end_comm(self):
         self._lock_acquire()
         try:
             if( not self.is_init() ):
                 raise Exception('interferometer communication is not running')
             else:
-                self._stop_event.set()
+                self._exit_event.set()
                 self._process.join()
                 self._queue.close()
                 self._queue.join_thread()

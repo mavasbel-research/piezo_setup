@@ -9,15 +9,19 @@ import keyboard
 from queue import Queue
 from amplifier_utils import AmplifierSerial, tx_worker
 
-# serial paremters
+#####################################################
+
+# serial parameters
 BAUDRATE = 115200
-SERIAL_PORT = 'COM4'
+SERIAL_PORT = 'COM5'
 RX_TIMEOUT = 2
 TX_TIMEOUT = 2
 
-# amplifier paramters
+# amplifier parameters
 V_MAX = 1200
 V_MIN = -1200
+
+#####################################################
 
 # logger configuration
 format_string = "%(asctime)s.%(msecs)03d - %(levelname)5s - %(processName)11s - %(threadName)10s : %(message)s"

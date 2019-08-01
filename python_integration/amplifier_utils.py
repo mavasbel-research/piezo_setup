@@ -5,7 +5,9 @@ import multiprocessing
 import inspect
 import logging
 
+
 logger = logging.getLogger()
+
 
 def crc8(data):
     crc = 0
@@ -20,6 +22,7 @@ def crc8(data):
                 crc = crc | 0x80
             byte = byte >> 1
     return crc
+
 
 class AmplifierSerial():
     def __init__(self, v_max=10, v_min=-10,
@@ -181,7 +184,7 @@ class AmplifierController:
         finally:
             self._lock_release()
 
-    def stop_comm(self):
+    def end_comm(self):
         try:
             self._lock_acquire()
             if( not self.is_started() ): # validate process is running

@@ -6,12 +6,20 @@ from interferometer_utils import InterferometerController
 from interferometer_utils import InterferometerData
 from interferometer_utils import InterferometerQuality
 
+#####################################################
+
+# Interferometer parameters
+SERIAL_PORT = 5
+FREQ = 100
+
+#####################################################
+
 # logger configuration
 format_string = "%(asctime)s.%(msecs)03d - %(levelname)5s - %(processName)11s - %(threadName)10s : %(message)s"
 logging.basicConfig(datefmt="%Y-%m-%d %H:%M:%S", format=format_string, level=logging.INFO)
 logger = logging.getLogger()
 
-def worker_test(start_event, queue):
+def worker_test(measure_event, queue):
     logger.debug("starting test loop...")
     while(True):
         obj = queue.get()
@@ -26,15 +34,15 @@ def worker_test(start_event, queue):
     logger.debug("ending test loop...")
 
 if __name__ ==  '__main__':
-    interferometer_controller = InterferometerController(5, 100)
-    queue, start_event = interferometer_controller.init_comm()
-    process_test = multiprocessing.Process(target=worker_test, args=(start_event, queue))
+    interferometer_controller = InterferometerController(SERIAL_PORT, FREQ)
+    queue, measure_event = interferometer_controller.init_comm()
+    process_test = multiprocessing.Process(target=worker_test, args=(measure_event, queue))
     process_test.start()
     
     while(not msvcrt.kbhit()): pass
     msvcrt.getwch()
-    start_event.set()
+    measure_event.set()
 
     while(not msvcrt.kbhit()): pass
     msvcrt.getwch()
-    interferometer_controller.stop_comm()
+    interferometer_controller.end_comm()
